@@ -26,7 +26,7 @@ public class User {
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
-    @Column(name = "created_at", nullable = false, unique = true)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     public User() {
@@ -43,6 +43,11 @@ public class User {
         this.password = password;
         this.role = role;
         this.createdAt = createdAt;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
     }
 
     public UUID getId() {
