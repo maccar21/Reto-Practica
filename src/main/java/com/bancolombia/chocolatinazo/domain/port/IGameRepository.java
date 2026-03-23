@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface IGameRepository {
     Game save(Game game);
     Optional<Game> findByStatus(GameStatus status);
+    Optional<Game> findFirstByStatusOrderByCreatedAtDesc(GameStatus status);
 }
