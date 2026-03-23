@@ -1,6 +1,5 @@
 package com.bancolombia.chocolatinazo.domain.model;
 
-import com.bancolombia.chocolatinazo.domain.enums.RuleType;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -20,15 +19,15 @@ public class FinishedGame {
     @JoinColumn(name = "loser_user_id", nullable = false)
     private User loser;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private RuleType rule;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "game_id", nullable = false)
+    private Game game;
 
     @Column(name = "losing_number", nullable = false)
-    private Integer losingNumber;
+    private int losingNumber;
 
     @Column(name = "total_chocolatinas", nullable = false)
-    private Integer totalChocolatinas;
+    private int totalChocolatinas;
 
     @Column(name = "chocolatina_price", nullable = false)
     private BigDecimal chocolatinaPrice;
@@ -46,11 +45,11 @@ public class FinishedGame {
         this.id = id;
     }
 
-    public FinishedGame(UUID id, User loser, RuleType rule, Integer losingNumber, Integer totalChocolatinas,
+    public FinishedGame(UUID id,Game game, User loser, int losingNumber, int totalChocolatinas,
                         BigDecimal chocolatinaPrice, BigDecimal totalPaid, LocalDateTime finishedAt) {
         this.id = id;
+        this.game = game;
         this.loser = loser;
-        this.rule = rule;
         this.losingNumber = losingNumber;
         this.totalChocolatinas = totalChocolatinas;
         this.chocolatinaPrice = chocolatinaPrice;
@@ -79,27 +78,27 @@ public class FinishedGame {
         this.loser = loser;
     }
 
-    public RuleType getRule() {
-        return rule;
+    public Game getGame() {
+        return game;
     }
 
-    public void setRule(RuleType rule) {
-        this.rule = rule;
+    public void setGame(Game game) {
+        this.game = game;
     }
 
-    public Integer getLosingNumber() {
+    public int getLosingNumber() {
         return losingNumber;
     }
 
-    public void setLosingNumber(Integer losingNumber) {
+    public void setLosingNumber(int losingNumber) {
         this.losingNumber = losingNumber;
     }
 
-    public Integer getTotalChocolatinas() {
+    public int getTotalChocolatinas() {
         return totalChocolatinas;
     }
 
-    public void setTotalChocolatinas(Integer totalChocolatinas) {
+    public void setTotalChocolatinas(int totalChocolatinas) {
         this.totalChocolatinas = totalChocolatinas;
     }
 

@@ -7,6 +7,7 @@ import java.util.List;
 public interface IGameRecordRepository {
     GameRecord save(GameRecord gameRecord);
     List<GameRecord> findAll();
+    List<GameRecord> findByGameId(String gameId);
     void deleteAll();
     int count();
 

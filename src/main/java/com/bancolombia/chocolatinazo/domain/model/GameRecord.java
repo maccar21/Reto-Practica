@@ -14,6 +14,10 @@ public class GameRecord{
     private UUID id;
 
     @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "game_id", nullable = false)
+    private Game game;
+
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
@@ -25,8 +29,9 @@ public class GameRecord{
 
     public GameRecord() {}
 
-    public GameRecord(UUID id, User user, Integer chocolatinaNumber, LocalDateTime pickedAt) {
+    public GameRecord(UUID id, Game game, User user, Integer chocolatinaNumber, LocalDateTime pickedAt) {
         this.id = id;
+        this.game = game;
         this.user = user;
         this.chocolatinaNumber = chocolatinaNumber;
         this.pickedAt = pickedAt;
@@ -43,6 +48,14 @@ public class GameRecord{
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public Game getGame() {
+        return game;
+    }
+
+    public void setGame(Game game) {
+        this.game = game;
     }
 
     public User getUser() {
