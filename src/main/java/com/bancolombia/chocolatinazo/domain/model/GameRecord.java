@@ -22,14 +22,14 @@ public class GameRecord{
     private User user;
 
     @Column(name = "chocolatina_number", nullable = false)
-    private Integer chocolatinaNumber;
+    private int chocolatinaNumber;
 
     @Column(name = "picked_at", nullable = false, updatable = false)
     private LocalDateTime pickedAt;
 
     public GameRecord() {}
 
-    public GameRecord(UUID id, Game game, User user, Integer chocolatinaNumber, LocalDateTime pickedAt) {
+    public GameRecord(UUID id, Game game, User user, int chocolatinaNumber, LocalDateTime pickedAt) {
         this.id = id;
         this.game = game;
         this.user = user;
@@ -66,11 +66,11 @@ public class GameRecord{
         this.user = user;
     }
 
-    public Integer getChocolatinaNumber() {
+    public int getChocolatinaNumber() {
         return chocolatinaNumber;
     }
 
-    public void setChocolatinaNumber(Integer chocolatinaNumber) {
+    public void setChocolatinaNumber(int chocolatinaNumber) {
         this.chocolatinaNumber = chocolatinaNumber;
     }
 
