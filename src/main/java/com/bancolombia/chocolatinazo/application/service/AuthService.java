@@ -9,6 +9,7 @@ import com.bancolombia.chocolatinazo.domain.model.Role;
 import com.bancolombia.chocolatinazo.domain.model.User;
 import com.bancolombia.chocolatinazo.domain.port.IRoleRepository;
 import com.bancolombia.chocolatinazo.domain.port.IUserRepository;
+import com.bancolombia.chocolatinazo.infrastructure.exception.InvalidInputException;
 import com.bancolombia.chocolatinazo.infrastructure.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Collectors;
 
 /**
@@ -52,17 +54,17 @@ public class AuthService {
     public UserResponse register(AuthRegisterRequest request) {
         // Validate username not already exists
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Username already exists");
+            throw new InvalidInputException("Username already exists");
         }
 
         // Validate email not already exists
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
+            throw new InvalidInputException("Email already exists");
         }
 
         // Get default role (PLAYER)
         Role playerRole = roleRepository.findByName(RoleName.PLAYER)
-                .orElseThrow(() -> new IllegalStateException("PLAYER role not found in database"));
+                .orElseThrow(() -> new InvalidInputException("PLAYER role not found in database"));
 
         // Create new user
         User newUser = new User();
@@ -107,12 +109,12 @@ public class AuthService {
 
         // Validate user exists
         if (user == null) {
-            throw new IllegalArgumentException("Invalid email/username or password");
+            throw new InvalidInputException("Invalid email/username or password");
         }
 
         // Validate password
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("Invalid email/username or password");
+            throw new InvalidInputException("Invalid email/username or password");
         }
 
         // Generate JWT token with all user roles
