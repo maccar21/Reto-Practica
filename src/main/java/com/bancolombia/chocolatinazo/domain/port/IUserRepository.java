@@ -7,15 +7,12 @@ import java.util.UUID;
 
 /**
  * Port interface for User repository operations.
- * Defines all repository operations needed by the application layer.
- * Implementation is in infrastructure/repository/UserRepository.
+ * Defines custom query methods specific to the domain.
+ * Basic CRUD operations (save, delete, etc.) are inherited from JpaRepository.
  */
 public interface IUserRepository {
-    // CRUD operations
     User save(User user);
     Optional<User> findById(UUID id);
-
-    // Custom query methods
     Optional<User> findByEmail(String email);
     Optional<User> findByUsername(String username);
     boolean existsByEmail(String email);

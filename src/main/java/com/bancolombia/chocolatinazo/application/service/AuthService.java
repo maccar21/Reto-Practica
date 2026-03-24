@@ -13,7 +13,11 @@ import com.bancolombia.chocolatinazo.infrastructure.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Service responsible for user authentication (register and login).
@@ -65,7 +69,7 @@ public class AuthService {
         newUser.setUsername(request.getUsername());
         newUser.setEmail(request.getEmail());
         newUser.setPassword(passwordEncoder.encode(request.getPassword()));
-        newUser.setRole(playerRole);
+        newUser.setRoles(new HashSet<>(Set.of(playerRole)));
 
         // Save user to database
         User savedUser = userRepository.save(newUser);
@@ -111,9 +115,11 @@ public class AuthService {
             throw new IllegalArgumentException("Invalid email/username or password");
         }
 
-        // Generate JWT token
-        String role = user.getRole().getName().toString();
-        String token = jwtService.generateToken(user.getId(), role, user.getUsername());
+        // Generate JWT token with all user roles
+        List<String> roles = user.getRoles().stream()
+                .map(role -> role.getName().toString())
+                .collect(Collectors.toList());
+        String token = jwtService.generateToken(user.getId(), roles, user.getUsername());
 
         // Create and return response
         UserResponse userResponse = UserResponse.fromUser(user);

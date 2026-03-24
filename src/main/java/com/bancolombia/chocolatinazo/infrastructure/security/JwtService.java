@@ -11,6 +11,7 @@ import javax.crypto.SecretKey;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -31,13 +32,13 @@ public class JwtService {
     /**
      * Generate a JWT token for the given user.
      * @param userId The UUID of the authenticated user
-     * @param role The role name (PLAYER, AUDITOR, ADMIN)
+     * @param roles List of role names (PLAYER, AUDITOR, ADMIN)
      * @param username The username of the authenticated user
      * @return A signed JWT token string
      */
-    public String generateToken(UUID userId, String role, String username) {
+    public String generateToken(UUID userId, List<String> roles, String username) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", role);
+        claims.put("roles", roles);
         claims.put("username", username);
 
         Date now = new Date();
@@ -62,12 +63,13 @@ public class JwtService {
     }
 
     /**
-     * Extract the role from a JWT token.
+     * Extract the roles list from a JWT token.
      * @param token The JWT token string
-     * @return The role claim value
+     * @return List of role names
      */
-    public String extractRole(String token) {
-        return (String) extractAllClaims(token).get("role");
+    @SuppressWarnings("unchecked")
+    public List<String> extractRoles(String token) {
+        return (List<String>) extractAllClaims(token).get("roles");
     }
 
     /**

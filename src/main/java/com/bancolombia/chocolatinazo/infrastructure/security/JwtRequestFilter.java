@@ -51,11 +51,15 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
             if (token != null && jwtService.isTokenValid(token)) {
                 String userId = jwtService.extractUserId(token);
-                String role = jwtService.extractRole(token);
+                List<String> roles = jwtService.extractRoles(token);
 
                 // Create authorities with ROLE_ prefix as required by Spring Security
                 List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-                authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                if (roles != null) {
+                    for (String role : roles) {
+                        authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                    }
+                }
 
                 // Create authentication token with userId as principal
                 UsernamePasswordAuthenticationToken authenticationToken =

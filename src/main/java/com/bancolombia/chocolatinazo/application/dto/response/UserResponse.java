@@ -3,33 +3,39 @@ package com.bancolombia.chocolatinazo.application.dto.response;
 import com.bancolombia.chocolatinazo.domain.model.User;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class UserResponse {
 
     private UUID id;
     private String username;
     private String email;
-    private String role;
+    private Set<String> roles;
     private LocalDateTime createdAt;
 
     public UserResponse() {
     }
 
-    public UserResponse(UUID id, String username, String email, String role, LocalDateTime createdAt) {
+    public UserResponse(UUID id, String username, String email, Set<String> roles, LocalDateTime createdAt) {
         this.id = id;
         this.username = username;
         this.email = email;
-        this.role = role;
+        this.roles = roles;
         this.createdAt = createdAt;
     }
 
     public static UserResponse fromUser(User user) {
+        Set<String> roleNames = user.getRoles().stream()
+                .map(r -> r.getName().name())
+                .collect(Collectors.toSet());
+
         return new UserResponse(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
-                user.getRole().getName().toString(),
+                roleNames,
                 user.getCreatedAt()
         );
     }
@@ -58,12 +64,12 @@ public class UserResponse {
         this.email = email;
     }
 
-    public String getRole() {
-        return role;
+    public Set<String> getRoles() {
+        return roles;
     }
 
-    public void setRole(String role) {
-        this.role = role;
+    public void setRoles(Set<String> roles) {
+        this.roles = roles;
     }
 
     public LocalDateTime getCreatedAt() {

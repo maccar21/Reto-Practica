@@ -81,6 +81,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/game/calculate-loser").hasRole("ADMIN")
                         // Only admins can update the chocolate price
                         .requestMatchers(HttpMethod.PUT, "/api/chocolatina/value").hasRole("ADMIN")
+                        // Only admins can manage user roles
+                        .requestMatchers(HttpMethod.PUT, "/api/users/**").hasRole("ADMIN")
 
                         // ========== CATCH-ALL ==========
                         // All other requests require authentication (no specific role)
