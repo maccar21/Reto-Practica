@@ -72,8 +72,8 @@ public class SecurityConfig {
 
                         // ========== AUDITOR OR ADMIN ENDPOINTS ==========
                         // Auditors and admins can view current game and its records
-                        .requestMatchers(HttpMethod.GET, "/api/game/current").hasAnyRole("AUDITOR", "ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/game/current/records").hasAnyRole("AUDITOR", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/audit/current-game").hasAnyRole("AUDITOR", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/audit/current-game/records").hasAnyRole("AUDITOR", "ADMIN")
                         // Auditors and admins can view finished games
                         .requestMatchers(HttpMethod.GET, "/api/audit/finished-games").hasAnyRole("AUDITOR", "ADMIN")
 
@@ -84,6 +84,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/game/calculate-loser").hasRole("ADMIN")
                         // Only admins can update the chocolate price
                         .requestMatchers(HttpMethod.PUT, "/api/chocolatina/value").hasRole("ADMIN")
+                        // Any authenticated user can view the chocolate price
+                        .requestMatchers(HttpMethod.GET, "/api/chocolatina/value").authenticated()
                         // Only admins can manage user roles
                         .requestMatchers(HttpMethod.PUT, "/api/users/**").hasRole("ADMIN")
 

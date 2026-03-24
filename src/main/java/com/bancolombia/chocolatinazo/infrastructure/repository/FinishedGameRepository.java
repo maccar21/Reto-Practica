@@ -28,4 +28,6 @@ public interface FinishedGameRepository extends JpaRepository<FinishedGame, UUID
     // Query by game with ordering by finishedAt descending
     List<FinishedGame> findByGame_IdOrderByFinishedAtDesc(UUID gameId);
 
+
+
 }

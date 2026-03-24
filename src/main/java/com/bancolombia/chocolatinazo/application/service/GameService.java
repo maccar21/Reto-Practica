@@ -1,12 +1,16 @@
 package com.bancolombia.chocolatinazo.application.service;
 
+import com.bancolombia.chocolatinazo.application.dto.response.FinishedGameResponse;
 import com.bancolombia.chocolatinazo.application.dto.response.GameRecordResponse;
 import com.bancolombia.chocolatinazo.application.dto.response.GameResponse;
 import com.bancolombia.chocolatinazo.domain.enums.GameStatus;
 import com.bancolombia.chocolatinazo.domain.enums.RuleType;
+import com.bancolombia.chocolatinazo.domain.model.FinishedGame;
 import com.bancolombia.chocolatinazo.domain.model.Game;
 import com.bancolombia.chocolatinazo.domain.model.GameRecord;
 import com.bancolombia.chocolatinazo.domain.model.User;
+import com.bancolombia.chocolatinazo.domain.port.IChocolatinaConfigRepository;
+import com.bancolombia.chocolatinazo.domain.port.IFinishedGameRepository;
 import com.bancolombia.chocolatinazo.domain.port.IGameRecordRepository;
 import com.bancolombia.chocolatinazo.domain.port.IGameRepository;
 import com.bancolombia.chocolatinazo.domain.port.IUserRepository;
@@ -14,6 +18,8 @@ import com.bancolombia.chocolatinazo.infrastructure.exception.InvalidInputExcept
 import com.bancolombia.chocolatinazo.infrastructure.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -28,14 +34,20 @@ public class GameService {
 
     private final IGameRepository gameRepository;
     private final IGameRecordRepository gameRecordRepository;
+    private final IFinishedGameRepository finishedGameRepository;
+    private final IChocolatinaConfigRepository chocolatinaConfigRepository;
     private final IUserRepository userRepository;
     private final Random random;
 
     public GameService(IGameRepository gameRepository,
                        IGameRecordRepository gameRecordRepository,
+                       IFinishedGameRepository finishedGameRepository,
+                       IChocolatinaConfigRepository chocolatinaConfigRepository,
                        IUserRepository userRepository) {
         this.gameRepository = gameRepository;
         this.gameRecordRepository = gameRecordRepository;
+        this.finishedGameRepository = finishedGameRepository;
+        this.chocolatinaConfigRepository = chocolatinaConfigRepository;
         this.userRepository = userRepository;
         this.random = new Random();
     }
@@ -87,33 +99,6 @@ public class GameService {
         return toGameRecordResponse(savedRecord);
     }
 
-    /**
-     * Get the current ACTIVE game information.
-     *
-     * @return GameResponse with the active game details
-     * @throws ResourceNotFoundException if no active game exists
-     */
-    public GameResponse getCurrentGame() {
-        Game activeGame = gameRepository.findByStatus(GameStatus.ACTIVE)
-                .orElseThrow(() -> new ResourceNotFoundException("No active game found"));
-
-        return toGameResponse(activeGame);
-    }
-
-    /**
-     * Get all game records for the current ACTIVE game.
-     *
-     * @return List of GameRecordResponse with all picks in the current game
-     * @throws ResourceNotFoundException if no active game exists
-     */
-    public List<GameRecordResponse> getCurrentGameRecords() {
-        Game activeGame = gameRepository.findByStatus(GameStatus.ACTIVE)
-                .orElseThrow(() -> new ResourceNotFoundException("No active game found"));
-
-        return gameRecordRepository.findByGame_Id(activeGame.getId()).stream()
-                .map(this::toGameRecordResponse)
-                .collect(Collectors.toList());
-    }
 
     // ========== Private helper methods ==========
 
@@ -135,6 +120,91 @@ public class GameService {
                 record.getChocolatinaNumber(),
                 record.getPickedAt()
         );
+    }
+
+    private FinishedGameResponse toFinishedGameResponse(FinishedGame finishedGame) {
+        return new FinishedGameResponse(
+                finishedGame.getId(),
+                finishedGame.getGame().getId(),
+                finishedGame.getLoser().getId(),
+                finishedGame.getLoser().getUsername(),
+                finishedGame.getLosingNumber(),
+                finishedGame.getTotalChocolatinas(),
+                finishedGame.getChocolatinaPrice(),
+                finishedGame.getTotalPaid(),
+                finishedGame.getRuleType().name(),
+                finishedGame.getFinishedAt()
+        );
+    }
+
+    /**
+     * Calculate the loser of the current ACTIVE game.
+     *
+     * Steps:
+     * 1. Find the ACTIVE game
+     * 2. Get all game records
+     * 3. Determine loser based on rule (MIN = lowest number loses, MAX = highest number loses)
+     * 4. Get current chocolatina price
+     * 5. Calculate total to pay (quantity × price)
+     * 6. Save FinishedGame with loser info
+     * 7. Delete all game records (clean table for next game)
+     * 8. Mark game as FINISHED
+     *
+     * @param rule "MIN" or "MAX"
+     * @return FinishedGameResponse with loser details and payment info
+     */
+    public FinishedGameResponse calculateLoser(String rule) {
+        // 1. Find the ACTIVE game
+        Game activeGame = gameRepository.findByStatus(GameStatus.ACTIVE)
+                .orElseThrow(() -> new ResourceNotFoundException("No active game found"));
+
+        // 2. Get all game records for this game
+        List<GameRecord> records = gameRecordRepository.findByGame_Id(activeGame.getId());
+        if (records.isEmpty()) {
+            throw new InvalidInputException("No game records found. Players must pick chocolatinas first");
+        }
+
+        // 3. Determine loser based on rule
+        GameRecord loserRecord;
+        if ("MIN".equals(rule)) {
+            loserRecord = records.stream()
+                    .min(Comparator.comparingInt(GameRecord::getChocolatinaNumber))
+                    .orElseThrow(() -> new InvalidInputException("Could not determine loser"));
+        } else {
+            loserRecord = records.stream()
+                    .max(Comparator.comparingInt(GameRecord::getChocolatinaNumber))
+                    .orElseThrow(() -> new InvalidInputException("Could not determine loser"));
+        }
+
+        // 4. Get current chocolatina price
+        BigDecimal chocolatinaPrice = chocolatinaConfigRepository.findLatest()
+                .map(config -> config.getPrice())
+                .orElseThrow(() -> new ResourceNotFoundException("Chocolatina price not configured. An admin must set the price first"));
+
+        // 5. Calculate total to pay
+        int totalChocolatinas = records.size();
+        BigDecimal totalPaid = chocolatinaPrice.multiply(BigDecimal.valueOf(totalChocolatinas));
+
+        // 6. Save FinishedGame
+        FinishedGame finishedGame = new FinishedGame();
+        finishedGame.setGame(activeGame);
+        finishedGame.setLoser(loserRecord.getUser());
+        finishedGame.setLosingNumber(loserRecord.getChocolatinaNumber());
+        finishedGame.setTotalChocolatinas(totalChocolatinas);
+        finishedGame.setChocolatinaPrice(chocolatinaPrice);
+        finishedGame.setTotalPaid(totalPaid);
+        finishedGame.setRuleType(RuleType.valueOf(rule));
+
+        FinishedGame savedFinished = finishedGameRepository.save(finishedGame);
+
+        // 7. Delete all game records (clean for next game)
+        gameRecordRepository.deleteAll();
+
+        // 8. Mark game as FINISHED
+        activeGame.setStatus(GameStatus.FINISHED);
+        gameRepository.save(activeGame);
+
+        return toFinishedGameResponse(savedFinished);
     }
 }
 

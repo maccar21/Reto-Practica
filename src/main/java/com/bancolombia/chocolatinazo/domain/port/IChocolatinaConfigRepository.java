@@ -6,9 +6,8 @@ import java.util.Optional;
 
 /**
  * Port interface for ChocolatinaConfig repository operations.
- * Defines custom query methods specific to the domain.
- * Basic CRUD operations (save, delete, etc.) are inherited from JpaRepository.
  */
 public interface IChocolatinaConfigRepository {
+    ChocolatinaConfig save(ChocolatinaConfig config);
     Optional<ChocolatinaConfig> findLatest();
 }

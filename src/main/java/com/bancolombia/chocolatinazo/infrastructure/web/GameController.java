@@ -1,6 +1,8 @@
 package com.bancolombia.chocolatinazo.infrastructure.web;
 
+import com.bancolombia.chocolatinazo.application.dto.request.CalculateLoserRequest;
 import com.bancolombia.chocolatinazo.application.dto.request.CreateGameRequest;
+import com.bancolombia.chocolatinazo.application.dto.response.FinishedGameResponse;
 import com.bancolombia.chocolatinazo.application.dto.response.GameRecordResponse;
 import com.bancolombia.chocolatinazo.application.dto.response.GameResponse;
 import com.bancolombia.chocolatinazo.application.service.GameService;
@@ -9,13 +11,11 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -59,28 +59,21 @@ public class GameController {
         return ResponseEntity.status(HttpStatus.CREATED).body(picked);
     }
 
-    /**
-     * Get the current ACTIVE game.
-     * Only AUDITOR or ADMIN users can view.
-     *
-     * @return GameResponse with the current game information
-     */
-    @GetMapping("/current")
-    public ResponseEntity<GameResponse> getCurrentGame() {
-        GameResponse currentGame = gameService.getCurrentGame();
-        return ResponseEntity.ok(currentGame);
-    }
 
     /**
-     * Get all game records for the current ACTIVE game.
-     * Only AUDITOR or ADMIN users can view.
+     * Calculate the loser of the current game and finish it.
+     * Only ADMIN users can invoke this.
+     * Determines the loser based on rule (MIN or MAX), calculates payment,
+     * saves result in finished_games, deletes game records, and marks game as FINISHED.
      *
-     * @return List of GameRecordResponse objects
+     * @param request The request containing the rule (MIN or MAX)
+     * @return FinishedGameResponse with loser information and payment details
      */
-    @GetMapping("/current/records")
-    public ResponseEntity<List<GameRecordResponse>> getCurrentGameRecords() {
-        List<GameRecordResponse> records = gameService.getCurrentGameRecords();
-        return ResponseEntity.ok(records);
+    @PostMapping("/calculate-loser")
+    public ResponseEntity<FinishedGameResponse> calculateLoser(
+            @Valid @RequestBody CalculateLoserRequest request) {
+        FinishedGameResponse result = gameService.calculateLoser(request.getRule());
+        return ResponseEntity.ok(result);
     }
 }
 

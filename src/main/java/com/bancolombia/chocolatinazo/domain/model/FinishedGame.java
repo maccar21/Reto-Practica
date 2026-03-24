@@ -1,5 +1,6 @@
 package com.bancolombia.chocolatinazo.domain.model;
 
+import com.bancolombia.chocolatinazo.domain.enums.RuleType;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -19,6 +20,7 @@ public class FinishedGame {
     @JoinColumn(name = "loser_user_id", nullable = false)
     private User loser;
 
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "game_id", nullable = false)
     private Game game;
@@ -35,6 +37,10 @@ public class FinishedGame {
     @Column(name = "total_paid", nullable = false)
     private BigDecimal totalPaid;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "rule_type", nullable = false)
+    private RuleType ruleType;
+
     @Column(name = "finished_at", nullable = false, updatable = false)
     private LocalDateTime finishedAt;
 
@@ -45,8 +51,8 @@ public class FinishedGame {
         this.id = id;
     }
 
-    public FinishedGame(UUID id,Game game, User loser, int losingNumber, int totalChocolatinas,
-                        BigDecimal chocolatinaPrice, BigDecimal totalPaid, LocalDateTime finishedAt) {
+    public FinishedGame(UUID id, Game game, User loser, int losingNumber, int totalChocolatinas,
+                        BigDecimal chocolatinaPrice, BigDecimal totalPaid, RuleType ruleType, LocalDateTime finishedAt) {
         this.id = id;
         this.game = game;
         this.loser = loser;
@@ -54,6 +60,7 @@ public class FinishedGame {
         this.totalChocolatinas = totalChocolatinas;
         this.chocolatinaPrice = chocolatinaPrice;
         this.totalPaid = totalPaid;
+        this.ruleType = ruleType;
         this.finishedAt = finishedAt;
     }
 
@@ -77,6 +84,7 @@ public class FinishedGame {
     public void setLoser(User loser) {
         this.loser = loser;
     }
+
 
     public Game getGame() {
         return game;
@@ -116,6 +124,14 @@ public class FinishedGame {
 
     public void setTotalPaid(BigDecimal totalPaid) {
         this.totalPaid = totalPaid;
+    }
+
+    public RuleType getRuleType() {
+        return ruleType;
+    }
+
+    public void setRuleType(RuleType ruleType) {
+        this.ruleType = ruleType;
     }
 
     public LocalDateTime getFinishedAt() {

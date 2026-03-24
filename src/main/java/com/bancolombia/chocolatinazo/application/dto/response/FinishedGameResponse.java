@@ -14,12 +14,13 @@ public class FinishedGameResponse {
     private int totalChocolatinas;
     private BigDecimal chocolatinaPrice;
     private BigDecimal totalPaid;
+    private String ruleType;
     private LocalDateTime finishedAt;
 
     public FinishedGameResponse() {
     }
 
-    public FinishedGameResponse(UUID id, UUID gameId, UUID loserUserId, String loserUsername, int losingNumber, int totalChocolatinas, BigDecimal chocolatinaPrice, BigDecimal totalPaid, LocalDateTime finishedAt) {
+    public FinishedGameResponse(UUID id, UUID gameId, UUID loserUserId, String loserUsername, int losingNumber, int totalChocolatinas, BigDecimal chocolatinaPrice, BigDecimal totalPaid, String ruleType, LocalDateTime finishedAt) {
         this.id = id;
         this.gameId = gameId;
         this.loserUserId = loserUserId;
@@ -28,6 +29,7 @@ public class FinishedGameResponse {
         this.totalChocolatinas = totalChocolatinas;
         this.chocolatinaPrice = chocolatinaPrice;
         this.totalPaid = totalPaid;
+        this.ruleType = ruleType;
         this.finishedAt = finishedAt;
     }
 
@@ -93,6 +95,14 @@ public class FinishedGameResponse {
 
     public void setTotalPaid(BigDecimal totalPaid) {
         this.totalPaid = totalPaid;
+    }
+
+    public String getRuleType() {
+        return ruleType;
+    }
+
+    public void setRuleType(String ruleType) {
+        this.ruleType = ruleType;
     }
 
     public LocalDateTime getFinishedAt() {
