@@ -5,12 +5,12 @@ import com.bancolombia.chocolatinazo.domain.model.GameRecord;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Port interface for GameRecord repository operations.
+ * Defines custom query methods specific to the domain.
+ * Basic CRUD operations (save, delete, etc.) are inherited from JpaRepository.
+ */
 public interface IGameRecordRepository {
-    GameRecord save(GameRecord gameRecord);
-    List<GameRecord> findAll();
     List<GameRecord> findByGameId(UUID gameId);
-    void deleteAll();
-    int count();
-
 
 }

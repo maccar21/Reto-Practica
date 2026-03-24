@@ -88,7 +88,7 @@ public class SecurityConfig {
                 )
 
                 // Add our JWT filter before the default UsernamePasswordAuthenticationFilter
-                // This ensures tokens are validated before any other authentication mechanisms
+                // This ensures tokens are  validated before any other authentication mechanisms
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

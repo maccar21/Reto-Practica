@@ -5,8 +5,12 @@ import com.bancolombia.chocolatinazo.domain.model.Game;
 
 import java.util.Optional;
 
+/**
+ * Port interface for Game repository operations.
+ * Defines custom query methods specific to the domain.
+ * Basic CRUD operations are inherited from JpaRepository.
+ */
 public interface IGameRepository {
-    Game save(Game game);
     Optional<Game> findByStatus(GameStatus status);
     Optional<Game> findFirstByStatusOrderByCreatedAtDesc(GameStatus status);
 }
