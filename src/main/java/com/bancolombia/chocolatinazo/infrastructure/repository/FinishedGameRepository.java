@@ -16,12 +16,16 @@ import java.util.UUID;
 @Repository
 public interface FinishedGameRepository extends JpaRepository<FinishedGame, UUID>, IFinishedGameRepository {
 
-    List<FinishedGame> findByLoserId(UUID loserId);
+    // Query by loser (User relationship) - use underscore notation to access related entity's ID
+    List<FinishedGame> findByLoser_Id(UUID loserId);
 
-    List<FinishedGame> findByGameId(UUID gameId);
+    // Query by game (Game relationship) - use underscore notation to access related entity's ID
+    List<FinishedGame> findByGame_Id(UUID gameId);
 
-    List<FinishedGame> findByLoserIdOrderByFinishedAtDesc(UUID loserId);
+    // Query by loser with ordering by finishedAt descending
+    List<FinishedGame> findByLoser_IdOrderByFinishedAtDesc(UUID loserId);
 
-    List<FinishedGame> findByGameIdOrderByFinishedAtDesc(UUID gameId);
+    // Query by game with ordering by finishedAt descending
+    List<FinishedGame> findByGame_IdOrderByFinishedAtDesc(UUID gameId);
 
 }

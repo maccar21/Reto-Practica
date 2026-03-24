@@ -7,8 +7,8 @@ import com.bancolombia.chocolatinazo.application.dto.response.UserResponse;
 import com.bancolombia.chocolatinazo.domain.enums.RoleName;
 import com.bancolombia.chocolatinazo.domain.model.Role;
 import com.bancolombia.chocolatinazo.domain.model.User;
-import com.bancolombia.chocolatinazo.infrastructure.repository.RoleRepository;
-import com.bancolombia.chocolatinazo.infrastructure.repository.UserRepository;
+import com.bancolombia.chocolatinazo.domain.port.IRoleRepository;
+import com.bancolombia.chocolatinazo.domain.port.IUserRepository;
 import com.bancolombia.chocolatinazo.infrastructure.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,12 +23,12 @@ import java.util.Optional;
 @Service
 public class AuthService {
 
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
+    private final IUserRepository userRepository;
+    private final IRoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    public AuthService(UserRepository userRepository, RoleRepository roleRepository,
+    public AuthService(IUserRepository userRepository, IRoleRepository roleRepository,
                        PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
