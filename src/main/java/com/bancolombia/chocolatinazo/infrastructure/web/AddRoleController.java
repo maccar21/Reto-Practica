@@ -20,11 +20,11 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/users")
-public class UserController {
+public class AddRoleController {
 
     private final AddRoleService addRoleService;
 
-    public UserController(AddRoleService addRoleService) {
+    public AddRoleController(AddRoleService addRoleService) {
         this.addRoleService = addRoleService;
     }
 

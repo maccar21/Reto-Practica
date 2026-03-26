@@ -1,5 +1,7 @@
 package com.bancolombia.chocolatinazo.infrastructure.security;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -12,6 +14,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,9 +22,16 @@ import java.util.List;
  * JWT Request Filter that intercepts every request (except public endpoints).
  * Extracts the Bearer token from the Authorization header, validates it,
  * and sets the SecurityContext with the authenticated user information.
-
- * This filter is executed once per request and adds the ROLE_ prefix to the role
- * as required by Spring Security's hasRole() and hasAnyRole() methods.
+ *
+ * <p>Provides detailed JSON error messages for each token scenario:</p>
+ * <ul>
+ *   <li>Expired token → 401 with "JWT token has expired"</li>
+ *   <li>Invalid/malformed token → 401 with "Invalid JWT token"</li>
+ *   <li>No token → continues without auth (SecurityConfig handles 401/403)</li>
+ * </ul>
+ *
+ * <p>This filter is executed once per request and adds the ROLE_ prefix to the role
+ * as required by Spring Security's hasRole() and hasAnyRole() methods.</p>
  */
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
@@ -34,8 +44,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
     /**
      * Intercepts the request, extracts JWT token, validates it, and sets the SecurityContext.
-     * If token is valid, creates a UsernamePasswordAuthenticationToken with the user's ID
-     * and role authority, and places it in the SecurityContext.
+     * If token is expired or invalid, writes a JSON error response directly.
+     * If no token is provided, continues the filter chain (SecurityConfig handles access).
      *
      * @param request The HTTP request
      * @param response The HTTP response
@@ -49,29 +59,52 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         try {
             String token = extractTokenFromRequest(request);
 
-            if (token != null && jwtService.isTokenValid(token)) {
-                String userId = jwtService.extractUserId(token);
-                List<String> roles = jwtService.extractRoles(token);
+            if (token != null) {
+                // Token provided — check if valid
+                if (jwtService.isTokenValid(token)) {
+                    // Valid token — extract user info and set SecurityContext
+                    String userId = jwtService.extractUserId(token);
+                    List<String> roles = jwtService.extractRoles(token);
 
-                // Create authorities with ROLE_ prefix as required by Spring Security
-                List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-                if (roles != null) {
-                    for (String role : roles) {
-                        authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                    // Create authorities with ROLE_ prefix as required by Spring Security
+                    List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+                    if (roles != null) {
+                        for (String role : roles) {
+                            authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                        }
                     }
+
+                    // Create authentication token with userId as principal
+                    UsernamePasswordAuthenticationToken authenticationToken =
+                            new UsernamePasswordAuthenticationToken(userId, null, authorities);
+                    authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                    // Set the authentication in the SecurityContext
+                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+                } else if (jwtService.isTokenExpired(token)) {
+                    // Token is expired — 401 with specific message
+                    writeErrorResponse(response, HttpStatus.UNAUTHORIZED,
+                            "JWT token has expired. Please login again to get a new token",
+                            request.getRequestURI());
+                    return;
+
+                } else {
+                    // Token is invalid (malformed, bad signature, tampered)
+                    writeErrorResponse(response, HttpStatus.UNAUTHORIZED,
+                            "Invalid JWT token. The token is malformed or has been tampered with",
+                            request.getRequestURI());
+                    return;
                 }
-
-                // Create authentication token with userId as principal
-                UsernamePasswordAuthenticationToken authenticationToken =
-                        new UsernamePasswordAuthenticationToken(userId, null, authorities);
-                authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // Set the authentication in the SecurityContext
-                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
             }
+            // No token provided — continue without auth, SecurityConfig will decide
+
         } catch (Exception e) {
-            // Log error but continue filter chain to allow other error handlers to catch it
             logger.error("Cannot set user authentication in security context", e);
+            writeErrorResponse(response, HttpStatus.UNAUTHORIZED,
+                    "Authentication error: could not process the JWT token",
+                    request.getRequestURI());
+            return;
         }
 
         filterChain.doFilter(request, response);
@@ -79,7 +112,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
     /**
      * Extract the Bearer token from the Authorization header.
-     * Expected format: Authorization: Bearer <token>
+     * Expected format: Authorization: Bearer &lt;token&gt;
      *
      * @param request The HTTP request
      * @return The token string without "Bearer " prefix, or null if not found
@@ -92,6 +125,34 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         }
 
         return null;
+    }
+
+    /**
+     * Write a JSON error response directly to the HttpServletResponse.
+     * Used when the token is invalid or expired, before reaching any controller.
+     *
+     * @param response The HTTP response to write to
+     * @param status The HTTP status code
+     * @param message The descriptive error message
+     * @param path The request URI that was attempted
+     * @throws IOException if writing to the response fails
+     */
+    private void writeErrorResponse(HttpServletResponse response, HttpStatus status,
+                                    String message, String path) throws IOException {
+        response.setStatus(status.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+
+        String jsonBody = String.format(
+                "{\"status\":%d,\"error\":\"%s\",\"message\":\"%s\",\"path\":\"%s\",\"timestamp\":\"%s\"}",
+                status.value(),
+                status.getReasonPhrase(),
+                message,
+                path,
+                LocalDateTime.now()
+        );
+
+        response.getWriter().write(jsonBody);
     }
 }
 

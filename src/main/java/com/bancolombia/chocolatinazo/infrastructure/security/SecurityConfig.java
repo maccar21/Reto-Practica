@@ -3,14 +3,20 @@ package com.bancolombia.chocolatinazo.infrastructure.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import java.time.LocalDateTime;
 
 /**
  * Security configuration for the Chocolatinazo application.
@@ -72,6 +78,12 @@ public class SecurityConfig {
                     // Set stateless session policy - no server-side sessions
                     .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
+                    // Configure custom JSON error responses for 401 and 403
+                    .exceptionHandling(exceptions -> exceptions
+                            .authenticationEntryPoint(unauthorizedEntryPoint())
+                            .accessDeniedHandler(accessDeniedHandler())
+                    )
+
                     // Configure endpoint authorization by role
                     .authorizeHttpRequests(authz -> authz
                             // ========== PUBLIC ENDPOINTS (No authentication required) ==========
@@ -104,6 +116,51 @@ public class SecurityConfig {
         } catch (Exception e) {
             throw new org.springframework.security.config.annotation.AlreadyBuiltException("Error configuring security filter chain: " + e.getMessage());
         }
+    }
+
+    /**
+     * Custom AuthenticationEntryPoint that returns a 401 JSON response
+     * when a request is made to a protected endpoint without any JWT token.
+     *
+     * @return AuthenticationEntryPoint that writes a descriptive JSON error
+     */
+    private AuthenticationEntryPoint unauthorizedEntryPoint() {
+        return (request, response, authException) -> {
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.setCharacterEncoding("UTF-8");
+
+            String jsonBody = String.format(
+                    "{\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Authentication required. Please provide a valid JWT token in the Authorization header (Bearer <token>)\",\"path\":\"%s\",\"timestamp\":\"%s\"}",
+                    request.getRequestURI(),
+                    LocalDateTime.now()
+            );
+
+            response.getWriter().write(jsonBody);
+        };
+    }
+
+    /**
+     * Custom AccessDeniedHandler that returns a 403 JSON response
+     * when an authenticated user tries to access an endpoint their role doesn't allow.
+     * Example: a PLAYER trying to access an ADMIN-only endpoint.
+     *
+     * @return AccessDeniedHandler that writes a descriptive JSON error
+     */
+    private AccessDeniedHandler accessDeniedHandler() {
+        return (request, response, accessDeniedException) -> {
+            response.setStatus(HttpStatus.FORBIDDEN.value());
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.setCharacterEncoding("UTF-8");
+
+            String jsonBody = String.format(
+                    "{\"status\":403,\"error\":\"Forbidden\",\"message\":\"Access denied. Your role does not have permission to access this resource. Required role is different from your current role(s)\",\"path\":\"%s\",\"timestamp\":\"%s\"}",
+                    request.getRequestURI(),
+                    LocalDateTime.now()
+            );
+
+            response.getWriter().write(jsonBody);
+        };
     }
 
     /**

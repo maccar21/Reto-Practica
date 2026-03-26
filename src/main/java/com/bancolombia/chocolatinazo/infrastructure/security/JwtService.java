@@ -1,6 +1,7 @@
 package com.bancolombia.chocolatinazo.infrastructure.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -92,6 +93,27 @@ public class JwtService {
                     .verifyWith(getSigningKey())
                     .build()
                     .parseSignedClaims(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Check if a JWT token is expired.
+     * Used by the filter to provide a specific error message for expired tokens.
+     *
+     * @param token The JWT token string
+     * @return true if the token is expired, false if invalid for other reasons
+     */
+    public boolean isTokenExpired(String token) {
+        try {
+            Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token);
+            return false;
+        } catch (ExpiredJwtException e) {
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             return false;
