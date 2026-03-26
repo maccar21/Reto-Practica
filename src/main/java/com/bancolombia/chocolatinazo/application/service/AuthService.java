@@ -18,8 +18,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Collectors;
 
 /**
  * Service responsible for user authentication (register and login).
@@ -49,7 +47,7 @@ public class AuthService {
      *
      * @param request The registration request containing username, email, and password
      * @return UserResponse with the created user's information
-     * @throws IllegalArgumentException if username or email already exists
+     * @throws InvalidInputException if username or email already exists
      */
     public UserResponse register(AuthRegisterRequest request) {
         // Validate username not already exists
@@ -87,45 +85,71 @@ public class AuthService {
      *
      * @param request The login request containing email/username and password
      * @return AuthLoginResponse with JWT token and user information
-     * @throws IllegalArgumentException if credentials are invalid
+     * @throws InvalidInputException if credentials are invalid
      */
     public AuthLoginResponse login(AuthLoginRequest request) {
-        // Search for user by email or username
-        User user = null;
+        // Step 1: Find user by email or username
+        User user = findUserByCredentials(request)
+                .orElseThrow(() -> new InvalidInputException("Invalid email/username or password"));
 
-        if (request.getEmail() != null && !request.getEmail().isBlank()) {
-            Optional<User> userByEmail = userRepository.findByEmail(request.getEmail());
-            if (userByEmail.isPresent()) {
-                user = userByEmail.get();
-            }
-        }
-
-        if (user == null && request.getUsername() != null && !request.getUsername().isBlank()) {
-            Optional<User> userByUsername = userRepository.findByUsername(request.getUsername());
-            if (userByUsername.isPresent()) {
-                user = userByUsername.get();
-            }
-        }
-
-        // Validate user exists
-        if (user == null) {
-            throw new InvalidInputException("Invalid email/username or password");
-        }
-
-        // Validate password
+        // Step 2: Validate that the provided password matches the stored encrypted password
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new InvalidInputException("Invalid email/username or password");
         }
 
-        // Generate JWT token with all user roles
+        // Step 3: Generate JWT token containing userId, roles, and username as claims
         List<String> roles = user.getRoles().stream()
                 .map(role -> role.getName().toString())
-                .collect(Collectors.toList());
+                .toList();
         String token = jwtService.generateToken(user.getId(), roles, user.getUsername());
 
-        // Create and return response
+        // Step 4: Build and return the authentication response with token and user info
         UserResponse userResponse = UserResponse.fromUser(user);
         return new AuthLoginResponse(token, userResponse);
     }
-}
 
+    /**
+     * Find a user by email or username from the login request.
+     * If the email field contains '@', it searches by email.
+     * If it doesn't contain '@', it treats it as a username (flexible login).
+     * Falls back to the username field if email lookup fails.
+     *
+     * @param request The login request with email/username fields
+     * @return Optional containing the found user, or empty if not found
+     */
+    private Optional<User> findUserByCredentials(AuthLoginRequest request) {
+        // Try to find user by email field (can be email or username)
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            Optional<User> found = findByEmailField(request.getEmail());
+            if (found.isPresent()) {
+                return found;
+            }
+        }
+
+        // Fallback: try to find by the username field
+        if (request.getUsername() != null && !request.getUsername().isBlank()) {
+            return userRepository.findByUsername(request.getUsername());
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Resolve a user from the email field value.
+     * If it contains '@', validates format and searches by email.
+     * Otherwise, treats it as a username.
+     *
+     * @param emailFieldValue The value from the email field in the login request
+     * @return Optional containing the found user
+     */
+    private Optional<User> findByEmailField(String emailFieldValue) {
+        if (emailFieldValue.contains("@")) {
+            if (!emailFieldValue.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
+                throw new InvalidInputException("Invalid email/username or password");
+            }
+            return userRepository.findByEmail(emailFieldValue);
+        }
+        // No '@' found — treat as username (flexible login)
+        return userRepository.findByUsername(emailFieldValue);
+    }
+}

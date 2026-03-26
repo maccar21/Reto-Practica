@@ -3,6 +3,11 @@ package com.bancolombia.chocolatinazo.application.dto.response;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Response DTO representing a single game record (a player's chocolatina pick).
+ * Contains the player's information, the chocolatina number they picked,
+ * and the timestamp of when the pick was made.
+ */
 public class GameRecordResponse {
 
     private UUID id;

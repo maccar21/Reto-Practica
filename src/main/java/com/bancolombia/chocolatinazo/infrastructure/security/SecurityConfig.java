@@ -8,6 +8,7 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -15,22 +16,30 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * Security configuration for the Chocolatinazo application.
  * Implements Role-Based Access Control (RBAC) using Spring Security.
  *
- * Security Architecture:
- * - JWT tokens are used for authentication (stateless)
- * - Roles (PLAYER, AUDITOR, ADMIN) are used for authorization
- * - JwtRequestFilter intercepts all requests and validates tokens
- * - SessionCreationPolicy is STATELESS (no cookies/sessions)
- * - CSRF is disabled (not needed for JWT tokens)
+ * <p>Security Architecture:</p>
+ * <ul>
+ *   <li>JWT tokens are used for authentication (stateless)</li>
+ *   <li>Roles (PLAYER, AUDITOR, ADMIN) are used for authorization</li>
+ *   <li>JwtRequestFilter intercepts all requests and validates tokens</li>
+ *   <li>SessionCreationPolicy is STATELESS (no cookies/sessions)</li>
+ *   <li>CSRF is disabled (not needed for JWT tokens)</li>
+ * </ul>
  *
- * Endpoint Protection:
- * - Public (no auth required): /api/auth/register, /api/auth/login
- * - PLAYER role: /api/game/pick
- * - AUDITOR or ADMIN: /api/game/current, /api/audit/finished-games
- * - ADMIN only: /api/game/calculate-loser, /api/chocolatina/value
+ * <p>Endpoint Protection:</p>
+ * <ul>
+ *   <li>Public (no auth required): /api/auth/register, /api/auth/login</li>
+ *   <li>PLAYER role: /api/game/pick</li>
+ *   <li>AUDITOR or ADMIN: /api/audit/** endpoints</li>
+ *   <li>ADMIN only: /api/game/calculate-loser, /api/chocolatina/value, /api/users/**</li>
+ * </ul>
  */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private static final String ROLE_ADMIN   = "ADMIN";
+    private static final String ROLE_AUDITOR = "AUDITOR";
+    private static final String ROLE_PLAYER  = "PLAYER";
 
     private final JwtRequestFilter jwtRequestFilter;
 
@@ -41,78 +50,78 @@ public class SecurityConfig {
     /**
      * Configure HTTP security with RBAC for all endpoints.
      *
-     * Configuration:
-     * 1. CSRF disabled (not needed with JWT)
-     * 2. Stateless session policy (JWT doesn't require sessions)
-     * 3. Endpoint authorization by role
-     * 4. JwtRequestFilter added to filter chain
+     * <p>Configuration:</p>
+     * <ol>
+     *   <li>CSRF disabled (not needed with JWT)</li>
+     *   <li>Stateless session policy (JWT doesn't require sessions)</li>
+     *   <li>Endpoint authorization by role</li>
+     *   <li>JwtRequestFilter added to filter chain</li>
+     * </ol>
      *
      * @param http HttpSecurity object to configure
      * @return SecurityFilterChain
-     * @throws Exception if configuration fails
+     * @throws org.springframework.security.config.annotation.AlreadyBuiltException if already built
      */
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                // Disable CSRF since we're using stateless JWT tokens
-                .csrf(csrf -> csrf.disable())
+    public SecurityFilterChain filterChain(HttpSecurity http) throws org.springframework.security.config.annotation.AlreadyBuiltException {
+        try {
+            http
+                    // Disable CSRF since we're using stateless JWT tokens
+                    .csrf(AbstractHttpConfigurer::disable)
 
-                // Set stateless session policy - no server-side sessions
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                    // Set stateless session policy - no server-side sessions
+                    .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // Configure endpoint authorization by role
-                .authorizeHttpRequests(authz -> authz
-                        // ========== PUBLIC ENDPOINTS (No authentication required) ==========
-                        .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                    // Configure endpoint authorization by role
+                    .authorizeHttpRequests(authz -> authz
+                            // ========== PUBLIC ENDPOINTS (No authentication required) ==========
+                            .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
 
-                        // ========== PLAYER ROLE ENDPOINTS ==========
-                        // Only players can pick a chocolate bar
-                        .requestMatchers(HttpMethod.POST, "/api/game/pick").hasRole("PLAYER")
+                            // ========== PLAYER ROLE ENDPOINTS ==========
+                            .requestMatchers(HttpMethod.POST, "/api/game/pick").hasRole(ROLE_PLAYER)
 
-                        // ========== AUDITOR OR ADMIN ENDPOINTS ==========
-                        // Auditors and admins can view current game and its records
-                        .requestMatchers(HttpMethod.GET, "/api/audit/current-game").hasAnyRole("AUDITOR", "ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/audit/current-game/records").hasAnyRole("AUDITOR", "ADMIN")
-                        // Auditors and admins can view finished games
-                        .requestMatchers(HttpMethod.GET, "/api/audit/finished-games").hasAnyRole("AUDITOR", "ADMIN")
+                            // ========== AUDITOR OR ADMIN ENDPOINTS ==========
+                            .requestMatchers(HttpMethod.GET, "/api/audit/current-game").hasAnyRole(ROLE_AUDITOR, ROLE_ADMIN)
+                            .requestMatchers(HttpMethod.GET, "/api/audit/current-game/records").hasAnyRole(ROLE_AUDITOR, ROLE_ADMIN)
+                            .requestMatchers(HttpMethod.GET, "/api/audit/finished-games").hasAnyRole(ROLE_AUDITOR, ROLE_ADMIN)
 
-                        // ========== ADMIN ONLY ENDPOINTS ==========
-                        // Only admins can create a game
-                        .requestMatchers(HttpMethod.POST, "/api/game/create").hasRole("ADMIN")
-                        // Only admins can calculate loser and update the game state
-                        .requestMatchers(HttpMethod.POST, "/api/game/calculate-loser").hasRole("ADMIN")
-                        // Only admins can update the chocolate price
-                        .requestMatchers(HttpMethod.PUT, "/api/chocolatina/value").hasRole("ADMIN")
-                        // Any authenticated user can view the chocolate price
-                        .requestMatchers(HttpMethod.GET, "/api/chocolatina/value").authenticated()
-                        // Only admins can manage user roles
-                        .requestMatchers(HttpMethod.PUT, "/api/users/**").hasRole("ADMIN")
+                            // ========== ADMIN ONLY ENDPOINTS ==========
+                            .requestMatchers(HttpMethod.POST, "/api/game/create").hasRole(ROLE_ADMIN)
+                            .requestMatchers(HttpMethod.POST, "/api/game/calculate-loser").hasRole(ROLE_ADMIN)
+                            .requestMatchers(HttpMethod.PUT, "/api/chocolatina/value").hasRole(ROLE_ADMIN)
+                            .requestMatchers(HttpMethod.GET, "/api/chocolatina/value").authenticated()
+                            .requestMatchers(HttpMethod.PUT, "/api/users/**").hasRole(ROLE_ADMIN)
 
-                        // ========== CATCH-ALL ==========
-                        // All other requests require authentication (no specific role)
-                        .anyRequest().authenticated()
-                )
+                            // ========== CATCH-ALL ==========
+                            .anyRequest().authenticated()
+                    )
 
-                // Add our JWT filter before the default UsernamePasswordAuthenticationFilter
-                // This ensures tokens are  validated before any other authentication mechanisms
-                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+                    // Add our JWT filter before the default UsernamePasswordAuthenticationFilter
+                    .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return http.build();
+            return http.build();
+        } catch (Exception e) {
+            throw new org.springframework.security.config.annotation.AlreadyBuiltException("Error configuring security filter chain: " + e.getMessage());
+        }
     }
 
     /**
      * Create AuthenticationManager bean for potential use in authentication processes.
-     * Currently the application uses direct credential validation in AuthService,
+     * Currently, the application uses direct credential validation in AuthService,
      * but this bean is available for future extensions.
      *
      * @param http HttpSecurity
      * @return AuthenticationManager
-     * @throws Exception if configuration fails
+     * @throws org.springframework.security.config.annotation.AlreadyBuiltException if already built
      */
     @Bean
-    public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
-        return http.getSharedObject(AuthenticationManagerBuilder.class).build();
+    public AuthenticationManager authenticationManager(HttpSecurity http) throws org.springframework.security.config.annotation.AlreadyBuiltException {
+        try {
+            return http.getSharedObject(AuthenticationManagerBuilder.class).build();
+        } catch (Exception e) {
+            throw new org.springframework.security.config.annotation.AlreadyBuiltException("Error building AuthenticationManager: " + e.getMessage());
+        }
     }
 }
 

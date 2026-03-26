@@ -5,6 +5,12 @@ import jakarta.persistence.*;
 
 import java.util.UUID;
 
+/**
+ * JPA entity representing a role in the system.
+ * Maps to the "roles" table. Roles are used for RBAC authorization.
+ * Each role has a unique name defined by {@link RoleName} (PLAYER, AUDITOR, ADMIN).
+ * Users are associated with roles through a ManyToMany relationship via the user_roles join table.
+ */
 @Entity
 @Table(name = "roles")
 public class Role {

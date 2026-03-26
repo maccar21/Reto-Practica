@@ -7,6 +7,14 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+
+/**
+ * JPA entity representing a chocolatinazo game session.
+ * Maps to the "games" table. Each game has a status (ACTIVE or FINISHED)
+ * and a rule type (MIN or MAX) that determines how the loser is calculated.
+ * Only one ACTIVE game can exist at a time — enforced at the service layer.
+ * The createdAt timestamp is automatically set on persist.
+ */
 @Entity
 @Table(name = "games")
 public class Game {
@@ -36,6 +44,7 @@ public class Game {
         this.createdAt = createdAt;
     }
 
+    /** Automatically sets the creation timestamp before the entity is first persisted. */
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

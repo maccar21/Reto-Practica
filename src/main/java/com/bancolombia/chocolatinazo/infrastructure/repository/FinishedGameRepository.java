@@ -16,16 +16,16 @@ import java.util.UUID;
 @Repository
 public interface FinishedGameRepository extends JpaRepository<FinishedGame, UUID>, IFinishedGameRepository {
 
-    // Query by loser (User relationship) - use underscore notation to access related entity's ID
+    /** Find all finished games where a specific user was the loser. */
     List<FinishedGame> findByLoser_Id(UUID loserId);
 
-    // Query by game (Game relationship) - use underscore notation to access related entity's ID
+    /** Find all finished games for a specific game session. */
     List<FinishedGame> findByGame_Id(UUID gameId);
 
-    // Query by loser with ordering by finishedAt descending
+    /** Find all finished games where a specific user lost, ordered by date descending. */
     List<FinishedGame> findByLoser_IdOrderByFinishedAtDesc(UUID loserId);
 
-    // Query by game with ordering by finishedAt descending
+    /** Find all finished games for a specific game session, ordered by date descending. */
     List<FinishedGame> findByGame_IdOrderByFinishedAtDesc(UUID gameId);
 
 

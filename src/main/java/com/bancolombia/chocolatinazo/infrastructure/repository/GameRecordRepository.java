@@ -16,13 +16,21 @@ import java.util.UUID;
 @Repository
 public interface GameRecordRepository extends JpaRepository<GameRecord, UUID>, IGameRecordRepository {
 
-    // Implements IGameRecordRepository.findByGameId(UUID)
-    // Uses underscore notation to navigate Game relationship -> id
+    /** {@inheritDoc} */
     @Override
     List<GameRecord> findByGame_Id(UUID gameId);
 
-    // Additional query methods
+    /** Find all game records for a specific user across all games. */
     List<GameRecord> findByUser_Id(UUID userId);
+
+    /** Find all game records for a specific game, ordered by pick time descending. */
     List<GameRecord> findByGame_IdOrderByPickedAtDesc(UUID gameId);
+
+    /** {@inheritDoc} */
+    @Override
+    boolean existsByGame_IdAndUser_Id(UUID gameId, UUID userId);
+
+    @Override
+    boolean existsByGame_IdAndChocolatinaNumber(UUID gameId, int chocolatinaNumber);
 
 }

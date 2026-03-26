@@ -7,6 +7,12 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Response DTO representing a user's public profile.
+ * Contains the user's ID, username, email, assigned roles, and registration timestamp.
+ * Includes a factory method to convert a User entity to this DTO, ensuring
+ * that sensitive data (like passwords) is never exposed in API responses.
+ */
 public class UserResponse {
 
     private UUID id;
@@ -26,6 +32,13 @@ public class UserResponse {
         this.createdAt = createdAt;
     }
 
+    /**
+     * Factory method that converts a User domain entity into a UserResponse DTO.
+     * Maps the user's role set to a set of role name strings.
+     *
+     * @param user The User entity to convert
+     * @return UserResponse DTO with the user's public information
+     */
     public static UserResponse fromUser(User user) {
         Set<String> roleNames = user.getRoles().stream()
                 .map(r -> r.getName().name())

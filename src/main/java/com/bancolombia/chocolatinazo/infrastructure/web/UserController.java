@@ -2,7 +2,7 @@ package com.bancolombia.chocolatinazo.infrastructure.web;
 
 import com.bancolombia.chocolatinazo.application.dto.request.AddRoleRequest;
 import com.bancolombia.chocolatinazo.application.dto.response.UserResponse;
-import com.bancolombia.chocolatinazo.application.service.UserService;
+import com.bancolombia.chocolatinazo.application.service.AddRoleService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,15 +15,17 @@ import java.util.UUID;
 
 /**
  * REST Controller for user management endpoints.
+ * Only ADMIN users can access these endpoints.
+ * Provides role assignment functionality for existing users.
  */
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
-    private final UserService userService;
+    private final AddRoleService addRoleService;
 
-    public UserController(UserService userService) {
-        this.userService = userService;
+    public UserController(AddRoleService addRoleService) {
+        this.addRoleService = addRoleService;
     }
 
     /**
@@ -34,12 +36,12 @@ public class UserController {
      * @param request The request containing the role name
      * @return UserResponse with updated roles
      */
-    @PutMapping("/{userId}/role")
+    @PutMapping("/{userId}/add-role")
     public ResponseEntity<UserResponse> addRoleToUser(
             @PathVariable UUID userId,
             @Valid @RequestBody AddRoleRequest request) {
 
-        UserResponse response = userService.addRoleToUser(userId, request.getRoleName());
+        UserResponse response = addRoleService.addRoleToUser(userId, request.getRoleName());
         return ResponseEntity.ok(response);
     }
 }

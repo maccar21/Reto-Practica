@@ -17,6 +17,10 @@ import java.util.UUID;
 @Repository
 public interface ChocolatinaConfigRepository extends JpaRepository<ChocolatinaConfig, UUID>, IChocolatinaConfigRepository {
 
+    /**
+     * {@inheritDoc}
+     * Uses a native SQL query to get the most recently updated configuration record.
+     */
     @Query(value = "SELECT * FROM chocolatina_config ORDER BY updated_at DESC LIMIT 1", nativeQuery = true)
     Optional<ChocolatinaConfig> findLatest();
 

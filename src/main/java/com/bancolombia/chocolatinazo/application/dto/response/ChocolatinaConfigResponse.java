@@ -4,6 +4,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Response DTO for the chocolatina price configuration.
+ * Contains the current price, who last updated it, and when.
+ * This price is used to calculate how much the loser must pay.
+ */
 public class ChocolatinaConfigResponse {
 
     private UUID id;

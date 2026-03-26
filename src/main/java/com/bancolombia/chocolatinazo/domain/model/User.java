@@ -7,6 +7,15 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * JPA entity representing a user in the system.
+ * Maps to the "users" table. A user has a unique username and email,
+ * an encrypted password, and a set of roles (ManyToMany via user_roles join table).
+ * The createdAt timestamp is automatically set on persist via {@link jakarta.persistence.PrePersist}.
+ *
+ * <p>Design decision: ManyToMany relationship with roles allows a single user
+ * to hold multiple roles (e.g., PLAYER + ADMIN), enabling flexible RBAC.</p>
+ */
 @Entity
 @Table(name = "users")
 public class User {
@@ -51,6 +60,7 @@ public class User {
         this.createdAt = createdAt;
     }
 
+    /** Automatically sets the creation timestamp before the entity is first persisted. */
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

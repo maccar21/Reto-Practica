@@ -6,6 +6,11 @@ import com.bancolombia.chocolatinazo.domain.enums.RuleType;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Response DTO representing a game.
+ * Contains the game's unique ID, its current status (ACTIVE or FINISHED),
+ * the rule type (MIN or MAX), and the creation timestamp.
+ */
 public class GameResponse {
 
     private UUID id;

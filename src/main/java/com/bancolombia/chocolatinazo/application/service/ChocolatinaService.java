@@ -37,16 +37,19 @@ public class ChocolatinaService {
      * @throws ResourceNotFoundException if admin user not found
      */
     public ChocolatinaConfigResponse updateChocolatinaPrice(BigDecimal newPrice, UUID adminUserId) {
+        // Step 1: Find the admin user by ID — throws 404 if user does not exist
         User adminUser = userRepository.findById(adminUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Admin user not found with id: " + adminUserId));
 
-        // If a config already exists, update it. Otherwise create a new one.
+        // Step 2: Get the existing config or create a new one if none exists yet
         ChocolatinaConfig config = chocolatinaConfigRepository.findLatest()
                 .orElse(new ChocolatinaConfig());
 
+        // Step 3: Update the price and record which admin made the change
         config.setPrice(newPrice);
         config.setUpdatedBy(adminUser);
 
+        // Step 4: Persist the updated configuration and return the response
         ChocolatinaConfig savedConfig = chocolatinaConfigRepository.save(config);
         return toResponse(savedConfig);
     }
@@ -58,12 +61,18 @@ public class ChocolatinaService {
      * @throws ResourceNotFoundException if no configuration exists
      */
     public ChocolatinaConfigResponse getCurrentConfig() {
+        // Retrieve the latest chocolatina price config — throws 404 if no config has been set
         ChocolatinaConfig config = chocolatinaConfigRepository.findLatest()
                 .orElseThrow(() -> new ResourceNotFoundException("Chocolatina price not configured yet. An admin must set the price first"));
 
         return toResponse(config);
     }
 
+
+    /**
+     * Maps a ChocolatinaConfig entity to a ChocolatinaConfigResponse DTO.
+     * Includes the admin's ID and username who last updated the price.
+     */
     private ChocolatinaConfigResponse toResponse(ChocolatinaConfig config) {
         return new ChocolatinaConfigResponse(
                 config.getId(),
@@ -74,4 +83,3 @@ public class ChocolatinaService {
         );
     }
 }
-

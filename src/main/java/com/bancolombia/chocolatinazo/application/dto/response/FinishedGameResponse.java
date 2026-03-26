@@ -4,6 +4,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Response DTO representing a finished game.
+ * Contains all the information about the game result: the loser, their losing number,
+ * the rule applied (MIN/MAX), the chocolatina price snapshot at calculation time,
+ * total chocolatinas played, and the total amount the loser must pay.
+ */
 public class FinishedGameResponse {
 
     private UUID id;

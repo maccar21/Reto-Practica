@@ -1,7 +1,9 @@
 package com.bancolombia.chocolatinazo.infrastructure.exception;
 
 /**
- * Exception thrown when a resource is not found (404).
+ * Custom exception for resource not found scenarios.
+ * Handled by {@link GlobalExceptionHandler} and returns HTTP 404 (Not Found).
+ * Examples: user not found, no active game, chocolatina price not configured.
  */
 public class ResourceNotFoundException extends RuntimeException {
     public ResourceNotFoundException(String message) {

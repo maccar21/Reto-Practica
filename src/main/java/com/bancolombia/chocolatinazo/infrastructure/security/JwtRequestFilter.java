@@ -19,7 +19,7 @@ import java.util.List;
  * JWT Request Filter that intercepts every request (except public endpoints).
  * Extracts the Bearer token from the Authorization header, validates it,
  * and sets the SecurityContext with the authenticated user information.
- *
+
  * This filter is executed once per request and adds the ROLE_ prefix to the role
  * as required by Spring Security's hasRole() and hasAnyRole() methods.
  */

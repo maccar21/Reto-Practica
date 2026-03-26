@@ -7,6 +7,7 @@ import com.bancolombia.chocolatinazo.application.dto.response.GameRecordResponse
 import com.bancolombia.chocolatinazo.application.dto.response.GameResponse;
 import com.bancolombia.chocolatinazo.application.service.GameService;
 import com.bancolombia.chocolatinazo.domain.enums.RuleType;
+import com.bancolombia.chocolatinazo.infrastructure.exception.UnauthorizedException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,8 @@ import java.util.UUID;
 
 /**
  * REST Controller for game management endpoints.
+ * Handles game creation, chocolatina picking, and loser calculation.
+ * Access is restricted by role: PLAYER can pick, ADMIN can create and calculate.
  */
 @RestController
 @RequestMapping("/api/game")
@@ -54,7 +57,11 @@ public class GameController {
      */
     @PostMapping("/pick")
     public ResponseEntity<GameRecordResponse> pickChocolatina(Authentication authentication) {
-        UUID userId = UUID.fromString(authentication.getPrincipal().toString());
+        Object principal = authentication.getPrincipal();
+        if (principal == null) {
+            throw new UnauthorizedException("Authenticated user not found");
+        }
+        UUID userId = UUID.fromString(principal.toString());
         GameRecordResponse picked = gameService.pickChocolatina(userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(picked);
     }

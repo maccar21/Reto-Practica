@@ -1,5 +1,10 @@
 package com.bancolombia.chocolatinazo.application.dto.response;
 
+/**
+ * Response DTO returned after successful login.
+ * Contains the JWT token for subsequent authenticated requests
+ * and the user's profile information including their assigned roles.
+ */
 public class AuthLoginResponse {
 
     private String token;

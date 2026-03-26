@@ -15,9 +15,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+
 /**
  * Service responsible for audit operations.
- * Provides read-only access to current and finished games data for auditors and admins.
+ * Provides read-only access to current and finished games data for the roles AUDITOR and ADMIN.
  */
 @Service
 public class AuditService {
@@ -41,6 +42,7 @@ public class AuditService {
      * @throws ResourceNotFoundException if no active game exists
      */
     public GameResponse getCurrentGame() {
+        // Find the currently ACTIVE game — throws 404 if no game is in progress
         Game activeGame = gameRepository.findByStatus(GameStatus.ACTIVE)
                 .orElseThrow(() -> new ResourceNotFoundException("No active game found"));
 
@@ -60,9 +62,11 @@ public class AuditService {
      * @throws ResourceNotFoundException if no active game exists
      */
     public List<GameRecordResponse> getCurrentGameRecords() {
+        // Find the ACTIVE game first — throws 404 if no game is in progress
         Game activeGame = gameRepository.findByStatus(GameStatus.ACTIVE)
                 .orElseThrow(() -> new ResourceNotFoundException("No active game found"));
 
+        // Retrieve all game records (picks) for this game and map to response DTOs
         return gameRecordRepository.findByGame_Id(activeGame.getId()).stream()
                 .map(this::toGameRecordResponse)
                 .toList();
@@ -75,6 +79,7 @@ public class AuditService {
      * @return List of FinishedGameResponse with all completed game records
      */
     public List<FinishedGameResponse> getFinishedGames() {
+        // Retrieve all finished games from the database and map to response DTOs
         return finishedGameRepository.findAll().stream()
                 .map(this::toFinishedGameResponse)
                 .toList();
@@ -102,15 +107,21 @@ public class AuditService {
         );
     }
 
-    private GameRecordResponse toGameRecordResponse(GameRecord record) {
+    /**
+     * Maps a GameRecord entity to a GameRecordResponse DTO.
+     * Includes the player's username from the User relationship.
+     *
+     * @param gameRecord The entity to convert
+     * @return GameRecordResponse DTO
+     */
+    private GameRecordResponse toGameRecordResponse(GameRecord gameRecord) {
         return new GameRecordResponse(
-                record.getId(),
-                record.getGame().getId(),
-                record.getUser().getId(),
-                record.getUser().getUsername(),
-                record.getChocolatinaNumber(),
-                record.getPickedAt()
+                gameRecord.getId(),
+                gameRecord.getGame().getId(),
+                gameRecord.getUser().getId(),
+                gameRecord.getUser().getUsername(),
+                gameRecord.getChocolatinaNumber(),
+                gameRecord.getPickedAt()
         );
     }
 }
-

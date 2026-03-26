@@ -3,6 +3,7 @@ package com.bancolombia.chocolatinazo.infrastructure.web;
 import com.bancolombia.chocolatinazo.application.dto.request.UpdateChocolatinaValueRequest;
 import com.bancolombia.chocolatinazo.application.dto.response.ChocolatinaConfigResponse;
 import com.bancolombia.chocolatinazo.application.service.ChocolatinaService;
+import com.bancolombia.chocolatinazo.infrastructure.exception.UnauthorizedException;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -16,6 +17,8 @@ import java.util.UUID;
 
 /**
  * REST Controller for chocolatina price configuration endpoints.
+ * ADMIN users can update the price; any authenticated user can view it.
+ * The price set here is used as a snapshot when calculating the loser's payment.
  */
 @RestController
 @RequestMapping("/api/chocolatina")
@@ -40,7 +43,11 @@ public class ChocolatinaController {
     public ResponseEntity<ChocolatinaConfigResponse> updateChocolatinaPrice(
             @Valid @RequestBody UpdateChocolatinaValueRequest request,
             Authentication authentication) {
-        UUID adminUserId = UUID.fromString(authentication.getPrincipal().toString());
+        Object principal = authentication.getPrincipal();
+        if (principal == null) {
+            throw new UnauthorizedException("Authenticated user not found");
+        }
+        UUID adminUserId = UUID.fromString(principal.toString());
         ChocolatinaConfigResponse response = chocolatinaService.updateChocolatinaPrice(request.getPrice(), adminUserId);
         return ResponseEntity.ok(response);
     }

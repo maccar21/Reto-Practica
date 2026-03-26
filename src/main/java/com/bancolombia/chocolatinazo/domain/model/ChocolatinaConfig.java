@@ -6,6 +6,18 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+
+/**
+ * JPA entity representing the chocolatina price configuration.
+ * Maps to the "chocolatina_config" table. Stores the current price of a chocolatina
+ * and tracks which admin user last updated it.
+ *
+ * <p>The updatedAt timestamp is automatically set on both persist and update
+ * via {@link jakarta.persistence.PrePersist} and {@link jakarta.persistence.PreUpdate}.</p>
+ *
+ * <p>When calculating the loser, the price is snapshotted into the FinishedGame record
+ * to preserve historical accuracy.</p>
+ */
 @Entity
 @Table(name = "chocolatina_config")
 public class ChocolatinaConfig {
@@ -38,6 +50,7 @@ public class ChocolatinaConfig {
         this.updatedAt = updatedAt;
     }
 
+    /** Automatically sets the update timestamp on both insert and update operations. */
     @PrePersist
     @PreUpdate
     protected void onUpdate() {

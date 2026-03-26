@@ -19,12 +19,13 @@ import java.util.UUID;
 @Repository
 public interface GameRepository extends JpaRepository<Game, UUID>, IGameRepository {
 
-    // Note: Spring Data JPA allows multiple method names to satisfy interface contracts
-    // findByStatus(GameStatus) from JpaRepository queries, while IGameRepository expects Optional
+    /** {@inheritDoc} */
     Optional<Game> findByStatus(GameStatus status);
 
+    /** {@inheritDoc} */
     Optional<Game> findFirstByStatusOrderByCreatedAtDesc(GameStatus status);
 
+    /** Find all games that used a specific rule type (MIN or MAX). */
     List<Game> findByRuleType(RuleType ruleType);
 
 

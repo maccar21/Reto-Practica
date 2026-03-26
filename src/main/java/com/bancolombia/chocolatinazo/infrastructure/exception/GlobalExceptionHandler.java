@@ -3,10 +3,15 @@ package com.bancolombia.chocolatinazo.infrastructure.exception;
 import com.bancolombia.chocolatinazo.application.dto.response.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * Global exception handler for all controllers.
@@ -74,16 +79,23 @@ public class GlobalExceptionHandler {
 
     /**
      * Handle validation errors from @Valid annotation (400).
-     * Thrown when request body fails validation constraints.
+         * Thrown when request body fails validation constraints.
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationErrors(
             MethodArgumentNotValidException ex,
             WebRequest request) {
 
+        // Priority order: NotBlank/NotNull errors first, then Size/Pattern, then the rest
+        List<String> priorityAnnotations = List.of("NotBlank", "NotNull", "NotEmpty");
+
         String firstError = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
+                .sorted(Comparator.comparingInt((FieldError fe) -> {
+                    String code = fe.getCode() != null ? fe.getCode() : "";
+                    return priorityAnnotations.contains(code) ? 0 : 1;
+                }))
                 .findFirst()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .orElse("Validation failed");
@@ -92,6 +104,26 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST.value(),
                 "Validation Error",
                 firstError,
+                request.getDescription(false).replace("uri=", "")
+        );
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Handle malformed JSON or type mismatch errors (400).
+     * Thrown when the request body contains invalid data types
+     * (e.g., letters in a numeric field, malformed JSON).
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException ex,
+            WebRequest request) {
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                "Invalid request body: please check the data types and format of your input",
                 request.getDescription(false).replace("uri=", "")
         );
 

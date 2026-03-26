@@ -8,6 +8,20 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 
+/**
+ * JPA entity representing the result of a completed chocolatinazo game.
+ * Maps to the "finished_games" table. Stores a snapshot of all relevant data
+ * at the moment the game was finished, including:
+ * <ul>
+ *   <li>The loser (User) and their losing chocolatina number.</li>
+ *   <li>The rule applied (MIN or MAX) to determine the loser.</li>
+ *   <li>The chocolatina price at the time of calculation (snapshot, not a reference).</li>
+ *   <li>The total number of chocolatinas played and the total amount the loser must pay.</li>
+ * </ul>
+ *
+ * <p>Design decision: the loser's username is obtained via the User relationship (normalized)
+ * rather than being denormalized into a separate column.</p>
+ */
 @Entity
 @Table(name = "finished_games")
 public class FinishedGame {
@@ -64,6 +78,7 @@ public class FinishedGame {
         this.finishedAt = finishedAt;
     }
 
+    /** Automatically sets the finished timestamp before the entity is first persisted. */
     @PrePersist
     protected void onCreate() {
         this.finishedAt = LocalDateTime.now();

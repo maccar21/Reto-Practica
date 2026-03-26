@@ -1,9 +1,21 @@
 package com.bancolombia.chocolatinazo.application.dto.request;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 
+/**
+ * Request DTO for user login.
+ * Supports flexible authentication: the user can log in using either email or username.
+ * If the "email" field contains a value without '@', it is treated as a username.
+ */
 public class AuthLoginRequest {
 
+    @Email(message = "Email format is invalid")
+    @Pattern(
+        regexp = "^$|^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+        message = "Email must have a valid domain (e.g. user@example.com)"
+    )
     private String email;
     private String username;
 
